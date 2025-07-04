@@ -17,7 +17,7 @@ namespace Library.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAsync( Guid id)
+        public async Task<IActionResult> DeleteAsync(Guid id)
         {
             var deleted = await _service.DeleteBookCategoryAsync(id);
             if (!deleted)
@@ -62,7 +62,7 @@ namespace Library.Controllers
                 return NotFound("No book-category relations found");
             return Ok(result);
         }
-        
+
         [HttpPost("bulk")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -84,7 +84,7 @@ namespace Library.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                if(ex.Message.Contains("Book does not exist"))
+                if (ex.Message.Contains("Book does not exist"))
                     return NotFound(ex.Message);
 
                 return BadRequest(ex.Message);
@@ -100,7 +100,7 @@ namespace Library.Controllers
         public async Task<ActionResult<List<BooksREST>>> GetBooksForCategory(Guid categoryId)
         {
             var books = await _service.GetBooksForCategoryAsync(categoryId);
-            
+
             return Ok(books);
         }
 
@@ -122,6 +122,17 @@ namespace Library.Controllers
         {
             var result = await _service.GetCategoriesWithoutBooksAsync();
             return Ok(result);
+        }
+        [HttpPost("delete/by-relation-ids")]
+        public async Task<IActionResult> DeleteRelations([FromBody] DeleteRelationIdList dto)
+        {
+            if (dto.RelationIds == null || dto.RelationIds.Count == 0)
+                return BadRequest("No relation IDs provided.");
+
+            var deletedCount = await _service.DeleteRelationsAsync(dto.RelationIds);
+            if (deletedCount == 0)
+                return NotFound("No matching relations found to delete!");
+            return NoContent();
         }
     }
 }

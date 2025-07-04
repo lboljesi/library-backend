@@ -115,6 +115,12 @@ namespace LibraryService
             return await _repository.GetCategoriesWithoutBooksAsync();
         }
 
+        public async Task<int> DeleteRelationsAsync(List<Guid> relationIds)
+        {
+            if (relationIds == null || relationIds.Count == 0)
+                return 0;
+            return await _repository.DeleteRelationsAsync(relationIds);
+        }
         
     }
 }

@@ -21,5 +21,6 @@ namespace LibraryRepository.Common
         Task<List<Category>> GetCategoriesWithoutBooksAsync();
 
         Task<int> CountGroupedBookAsync(PaginationQuery query);
+        Task<int> DeleteRelationsAsync(List<Guid> relationIds);
     }
 }

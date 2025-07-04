@@ -211,7 +211,7 @@ namespace LibraryRepository
             cmd.Parameters.AddWithValue("categoryId", categoryId);
 
             await using var reader = await cmd.ExecuteReaderAsync();
-            while(await reader.ReadAsync())
+            while (await reader.ReadAsync())
             {
                 books.Add(new Books
                 {
@@ -378,6 +378,18 @@ namespace LibraryRepository
             }
             return result;
 
+        }
+
+        public async Task<int> DeleteRelationsAsync(List<Guid> relationIds)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var sql = @"DELETE FROM ""BookCategories"" WHERE ""Id"" = ANY(@ids)";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("ids", relationIds.ToArray());
+            var affectedRows = await cmd.ExecuteNonQueryAsync();
+            return affectedRows;
         }
 
     }
