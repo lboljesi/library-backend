@@ -392,6 +392,63 @@ namespace LibraryRepository
             return affectedRows;
         }
 
+        public async Task<List<BookWithAuthorsDto>> GetBooksWithAuthorsForCategoryAsync(Guid categoryId)
+        {
+            var result = new Dictionary<Guid, BookWithAuthorsDto>();
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            const string sql = @"
+                SELECT
+                    b.""Id"" as BookId,
+                    b.""Title"",
+                    b.""Isbn"",
+                    b.""PublishedYear"",
+                    b.""Price"",
+                    a.""Id"" as AuthorId,
+                    a.""FirstName"",
+                    a.""LastName""
+                FROM ""Books"" b
+                INNER JOIN ""BookCategories"" bc ON b.""Id"" = bc.""BookId""
+                LEFT JOIN ""BookAuthors"" ba ON ba.""BookId"" = b.""Id""
+                LEFT JOIN ""Authors"" a ON a.""Id"" = ba.""AuthorId""
+                WHERE bc.""CategoryId"" = @categoryId
+                ORDER BY b.""Title""
+                ";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("categoryId", categoryId);
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var bookId = reader.GetGuid(0);
+                if(!result.ContainsKey(bookId))
+                {
+                    result[bookId] = new BookWithAuthorsDto
+                    {
+                        Id = bookId,
+                        Title = reader.GetString(1),
+                        Isbn = reader.GetString(2),
+                        PublishedYear = reader.GetInt32(3),
+                        Price = reader.GetInt32(4),
+                        Authors = new List<AuthorDto>()
+                    };
+                }
+
+                if(!reader.IsDBNull(5))
+                {
+                    result[bookId].Authors.Add(new AuthorDto
+                    {
+                        Id = reader.GetGuid(5),
+                        FirstName = reader.GetString(6),
+                        LastName = reader.GetString(7)
+                    });
+                }
+            }
+            return result.Values.ToList();
+
+        }
+
     }
 }
 

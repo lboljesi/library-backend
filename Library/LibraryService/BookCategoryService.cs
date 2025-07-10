@@ -121,6 +121,12 @@ namespace LibraryService
                 return 0;
             return await _repository.DeleteRelationsAsync(relationIds);
         }
-        
+
+        public async Task<List<BookWithAuthorsDto>> GetBooksWithAuthorsForCategoryAsync(Guid categoryId)
+        {
+            return await _repository.GetBooksWithAuthorsForCategoryAsync(categoryId);
+        }
+
+
     }
 }

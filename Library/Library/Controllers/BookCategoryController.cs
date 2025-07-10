@@ -134,5 +134,12 @@ namespace Library.Controllers
                 return NotFound("No matching relations found to delete!");
             return NoContent();
         }
+
+        [HttpGet("{categoryId}/books-with-authors")]
+        public async Task<IActionResult> GetBooksWithAuthorsForCategory(Guid categoryId)
+        {
+            var books = await _service.GetBooksWithAuthorsForCategoryAsync(categoryId);
+            return Ok(books);
+        }
     }
 }
