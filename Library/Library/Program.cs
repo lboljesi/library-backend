@@ -6,7 +6,10 @@ using LibraryRepository.Common;
 using LibraryRepositroy.Common;
 using LibraryService;
 using LibraryService.Common;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +28,31 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
 builder.Services.AddControllers();
 
+// JWT config
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+// Ensure the "Key" value is not null by using null-coalescing operator or throwing an exception if null
+var key = Encoding.UTF8.GetBytes(jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key is not configured."));
 
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options => 
+{
+    options.TokenValidationParameters = new TokenValidationParameters { 
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(key)
+    };
+});
+
+builder.Services.AddAuthorization();
 
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -51,6 +78,8 @@ builder.Host.ConfigureContainer<ContainerBuilder>(container =>
     container.RegisterType<CategoryService>().As<ICategoryService>().InstancePerLifetimeScope();
     container.RegisterType<BookCategoryRepository>().As<IBookCategoryRepository>().InstancePerLifetimeScope();
     container.RegisterType<BookCategoryService>().As<IBookCategoryService>().InstancePerLifetimeScope();
+    container.RegisterType<UserRepository>().As<IUserRepository>().InstancePerLifetimeScope();
+    container.RegisterType<UserService>().As<IUserService>().InstancePerLifetimeScope();
 
 });
 
@@ -58,6 +87,9 @@ builder.Host.ConfigureContainer<ContainerBuilder>(container =>
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseCors("AllowAllOrigins");
 
 // 🌐 Middleware

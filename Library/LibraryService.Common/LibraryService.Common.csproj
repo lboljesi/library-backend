@@ -10,12 +10,14 @@
     <PackageReference Include="Autofac" Version="8.3.0" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="AutoMapper" Version="14.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.18" />
     <PackageReference Include="Npgsql" Version="9.0.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\LibraryModels\LibraryModels.csproj" />
     <ProjectReference Include="..\LibraryQuerying\LibraryQuerying.csproj" />
+    <ProjectReference Include="..\LibraryRestModels\LibraryRestModels.csproj" />
   </ItemGroup>
 
 </Project>
