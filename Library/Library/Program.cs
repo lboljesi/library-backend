@@ -1,6 +1,6 @@
 ﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using BootcampApp.Repository.Common;
+
 using LibraryRepository;
 using LibraryRepository.Common;
 using LibraryRepositroy.Common;
@@ -62,17 +62,6 @@ builder.Services.AddSwaggerGen();
 builder.Host.ConfigureContainer<ContainerBuilder>(container =>
 {
     container.RegisterType<BooksRepository>().As<IBooksRepository>().InstancePerLifetimeScope();
-    container.RegisterType<BooksService>().As<IBooksService>().InstancePerLifetimeScope();
-    container.RegisterType<AuthorsRepository>().As<IAuthorsRepository>().InstancePerLifetimeScope();
-    container.RegisterType<AuthorsService>().As<IAuthorsService>().InstancePerLifetimeScope();
-    container.RegisterType<MemberRepository>().As<IMemberRepository>().InstancePerLifetimeScope();
-    container.RegisterType<MemberService>().As<IMemberService>().InstancePerLifetimeScope();
-    container.RegisterType<BookAuthorsRepository>().As<IBookAuthorsRepository>().InstancePerLifetimeScope();
-    container.RegisterType<BookAuthorsService>().As<IBookAuthorsService>().InstancePerLifetimeScope();
-
-
-    container.RegisterType<LoanRepository>().As<ILoanRepository>().InstancePerLifetimeScope();
-    container.RegisterType<LoanService>().As<ILoanService>().InstancePerLifetimeScope();
 
     container.RegisterType<CategoryRepository>().As<ICategoryRepository>().InstancePerLifetimeScope();
     container.RegisterType<CategoryService>().As<ICategoryService>().InstancePerLifetimeScope();

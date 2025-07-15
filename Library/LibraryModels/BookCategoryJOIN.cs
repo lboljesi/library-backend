@@ -9,7 +9,7 @@ namespace LibraryModels
     public class BookCategoryJOIN
     {
         public Guid Id { get; set; }
-        public string BookTitle { get; set; } = string.Empty; // Fix: Initialize with a default value
-        public string CategoryName { get; set; } = string.Empty; // Fix: Initialize with a default value
+        public string BookTitle { get; set; } = string.Empty; 
+        public string CategoryName { get; set; } = string.Empty; 
     }
 }

@@ -97,7 +97,7 @@ namespace Library.Controllers
 
         }
         [HttpGet("{categoryId}/books")]
-        public async Task<ActionResult<List<BooksREST>>> GetBooksForCategory(Guid categoryId)
+        public async Task<ActionResult<List<Books>>> GetBooksForCategory(Guid categoryId)
         {
             var books = await _service.GetBooksForCategoryAsync(categoryId);
 
