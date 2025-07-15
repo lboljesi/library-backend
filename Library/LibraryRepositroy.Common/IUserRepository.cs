@@ -10,5 +10,6 @@ namespace LibraryRepository.Common
     public interface IUserRepository
     {
         Task<User?> GetByEmailAsync(string email);
+        Task CreateUserAsync(string email, string passwordHash, string fullName);
     }
 }

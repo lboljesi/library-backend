@@ -63,5 +63,15 @@ namespace LibraryService
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        public async Task<string?> RegisterUserAsync(string email, string password, string fullName)
+        {
+            var existingUser = await _userRepository.GetByEmailAsync(email);
+            if (existingUser != null)
+                return null;
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            await _userRepository.CreateUserAsync(email, passwordHash, fullName);
+            return await ValidateLoginAndGenerateTokenAsync(email, password);
+        }
     }
 }

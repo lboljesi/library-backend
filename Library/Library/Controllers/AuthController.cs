@@ -32,5 +32,15 @@ namespace Library.Controllers
             return Ok("You are authorized!");
         }
 
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        {
+            var token = await _userService.RegisterUserAsync(dto.Email, dto.Password, dto.FullName);
+            if (token == null)
+                return BadRequest("User with that email already exists");
+
+            return Ok(new { token });
+        }
+
     }
 }

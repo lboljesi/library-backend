@@ -10,5 +10,6 @@ namespace LibraryService.Common
     public interface IUserService
     {
         Task<string?> ValidateLoginAndGenerateTokenAsync(string email, string password);
+        Task<string?> RegisterUserAsync(string email, string password, string fullName);
     }
 }

@@ -39,5 +39,18 @@ namespace LibraryRepository
                 FullName = reader.GetString(3)
             };
         }
+        public async Task CreateUserAsync(string email, string passwordHash, string fullName)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            await using var cmd = new NpgsqlCommand(@"
+                INSERT INTO ""Users"" (""Email"", ""PasswordHash"", ""FullName"") VALUES (@email, @passwordHash, @fullName)", conn);
+            cmd.Parameters.AddWithValue("email", email);
+            cmd.Parameters.AddWithValue("passwordHash", passwordHash);
+            cmd.Parameters.AddWithValue("fullName", fullName);
+
+            await cmd.ExecuteNonQueryAsync();
+        }
     }
 }
