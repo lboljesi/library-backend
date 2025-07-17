@@ -87,7 +87,7 @@ namespace LibraryRepository
 
             return null;
         }
-        public async Task<List<BookCategoryJOIN>> GetAllAsync(BookCategoryQuery query)
+        public async Task<List<BookCategoryJOIN>> GetAllAsync(SortablePaginationQuery query)
         {
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();

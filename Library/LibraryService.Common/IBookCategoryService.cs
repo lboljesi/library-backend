@@ -13,7 +13,7 @@ namespace LibraryService.Common
         Task<bool> DeleteBookCategoryAsync(Guid id);
         Task<BookCategory?> CreateBookCategoryAsync(CreateBookCategoryDto dto);
         Task<BookCategory?> GetByIdAsync(Guid id);
-        Task<List<BookCategoryJOIN>> GetAllAsync(BookCategoryQuery query);
+        Task<List<BookCategoryJOIN>> GetAllAsync(SortablePaginationQuery query);
         Task<List<CategoryWithRelation>> CreateManyAsync(Guid bookid, List<Guid> categoryIds);
         Task<List<Books>> GetBooksForCategoryAsync(Guid categoryId);
         Task<PagedResult<BookWithCategoriesDto>> GetGroupedByBooksAsync(PaginationQuery query);

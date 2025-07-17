@@ -16,14 +16,14 @@ namespace LibraryService
     public class BookCategoryService : IBookCategoryService
     {
         private readonly IBookCategoryRepository _repository;
-        private readonly IBooksRepository _booksRepository;
+        private readonly IBookRepository _bookRepository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly ILogger<BookCategoryService> _logger;
 
-        public BookCategoryService(IBookCategoryRepository repository, IBooksRepository booksRepository, ICategoryRepository categoryRepository, ILogger<BookCategoryService> logger)
+        public BookCategoryService(IBookCategoryRepository repository, IBookRepository booksRepository, ICategoryRepository categoryRepository, ILogger<BookCategoryService> logger)
         {
             _repository = repository;
-            _booksRepository = booksRepository;
+            _bookRepository = booksRepository;
             _categoryRepository = categoryRepository;
             _logger = logger;
         }
@@ -33,7 +33,7 @@ namespace LibraryService
         }
         public async Task<BookCategory?> CreateBookCategoryAsync(CreateBookCategoryDto dto)
         {
-            var bookExists = await _booksRepository.ExistsAsync(dto.BookId);
+            var bookExists = await _bookRepository.ExistsAsync(dto.BookId);
             var categoryExists = await _categoryRepository.ExistsAsync(dto.CategoryId);
             if (!bookExists || !categoryExists)
             {
@@ -56,7 +56,7 @@ namespace LibraryService
             return await _repository.GetByIdAsync(id);
         }
 
-        public async Task<List<BookCategoryJOIN>> GetAllAsync(BookCategoryQuery query)
+        public async Task<List<BookCategoryJOIN>> GetAllAsync(SortablePaginationQuery query)
         {
             return await _repository.GetAllAsync(query);
         }
@@ -71,7 +71,7 @@ namespace LibraryService
             if (categoryIds == null || !categoryIds.Any())
                 throw new ArgumentException("At least one category must be provided.");
 
-            if (!await _booksRepository.ExistsAsync(bookId))
+            if (!await _bookRepository.ExistsAsync(bookId))
                 throw new InvalidOperationException("Book does not exist.");
 
             var validCategoryIds = await _categoryRepository.GetExistingCategoryIdsAsync(categoryIds);

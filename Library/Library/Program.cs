@@ -61,7 +61,9 @@ builder.Services.AddSwaggerGen();
 
 builder.Host.ConfigureContainer<ContainerBuilder>(container =>
 {
-    container.RegisterType<BooksRepository>().As<IBooksRepository>().InstancePerLifetimeScope();
+    container.RegisterType<BookRepository>().As<IBookRepository>().InstancePerLifetimeScope();
+
+    container.RegisterType<BookService>().As<IBookService>().InstancePerLifetimeScope();
 
     container.RegisterType<CategoryRepository>().As<ICategoryRepository>().InstancePerLifetimeScope();
     container.RegisterType<CategoryService>().As<ICategoryService>().InstancePerLifetimeScope();

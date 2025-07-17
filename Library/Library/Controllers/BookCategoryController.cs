@@ -55,7 +55,7 @@ namespace Library.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<List<BookCategoryJOIN>>> Get([FromQuery] BookCategoryQuery query)
+        public async Task<ActionResult<List<BookCategoryJOIN>>> Get([FromQuery] SortablePaginationQuery query)
         {
             var result = await _service.GetAllAsync(query);
             if (result.Count == 0)

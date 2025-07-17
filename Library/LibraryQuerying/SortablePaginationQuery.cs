@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LibraryQuerying
 {
-    public class BookCategoryQuery : PaginationQuery
+    public class SortablePaginationQuery : PaginationQuery
     {
         public string? SortBy { get; set; }
     }
