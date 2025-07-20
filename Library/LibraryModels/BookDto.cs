@@ -8,7 +8,7 @@ namespace LibraryModels
 {
     public class BookDto
     {
-        public Guid Id;
+        public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Isbn { get; set; } = string.Empty;  
         public int PublishedYear { get; set; }
