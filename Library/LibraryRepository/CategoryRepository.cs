@@ -105,10 +105,10 @@ namespace LibraryRepository
             await conn.OpenAsync();
 
             const string sql = @"
-            UPDATE ""Categories""
-            SET ""Name"" = @name
-            WHERE ""Id"" = @id
-            RETURNING ""Id"", ""Name"";
+                UPDATE ""Categories""
+                SET ""Name"" = @name
+                WHERE ""Id"" = @id
+                RETURNING ""Id"", ""Name"";
             ";
             await using var cmd = new NpgsqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("id", category.Id);

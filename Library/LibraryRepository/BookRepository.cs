@@ -190,5 +190,127 @@ namespace LibraryRepository
             var result = await cmd.ExecuteScalarAsync();
             return result is not null;
         }
+
+        public async Task<Guid> AddBookAsync(BooksCreateUpdate dto)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            Guid bookId = Guid.NewGuid();
+            var bookQuery = @"
+                INSERT INTO ""Books"" (""Id"",""Title"", ""Isbn"", ""PublishedYear"", ""Price"")
+                VALUES(@BookId, @Title, @Isbn, @PublishedYear, @Price)";
+
+            await using var bookCmd = new NpgsqlCommand(bookQuery, conn);
+            bookCmd.Parameters.AddWithValue("@BookId", bookId);
+            bookCmd.Parameters.AddWithValue("@Title", dto.Title);
+            bookCmd.Parameters.AddWithValue("@Isbn", dto.Isbn);
+            bookCmd.Parameters.AddWithValue("@PublishedYear", dto.PublishedYear);
+            bookCmd.Parameters.AddWithValue("@Price", (object?)dto.Price ?? DBNull.Value);
+            await bookCmd.ExecuteNonQueryAsync();
+
+            if (dto.AuthorIds != null && dto.AuthorIds.Count > 0)
+            {
+                var authorQuery = @"
+                    INSERT INTO ""BookAuthors"" (""BookId"", ""AuthorId"")
+                    values (@BookId, @AuthorId);";
+                foreach(var authorId in dto.AuthorIds)
+                {
+                    await using var authorCmd = new NpgsqlCommand(authorQuery, conn);
+                    authorCmd.Parameters.AddWithValue("@BookId", bookId);
+                    authorCmd.Parameters.AddWithValue("@AuthorId",authorId);
+
+                    await authorCmd.ExecuteNonQueryAsync();
+                }
+            }
+
+            if (dto.CategoryIds != null && dto.CategoryIds.Count > 0)
+            {
+                var categoryQuery = @"
+                    INSERT INTO ""BookCategories"" (""BookId"", ""CategoryId"")
+                    values (@BookId, @CategoryId);";
+                foreach (var categoryId in dto.CategoryIds)
+                {
+                    await using var categoryCmd = new NpgsqlCommand(categoryQuery, conn);
+                    categoryCmd.Parameters.AddWithValue("@BookId", bookId);
+                    categoryCmd.Parameters.AddWithValue("@CategoryId", categoryId);
+
+                    await categoryCmd.ExecuteNonQueryAsync();
+                }
+            }
+            return bookId;
+
+        }
+        
+        public async Task<BookDto?> GetBookByIdAsync(Guid bookId)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            const string bookQuery = @"
+            SELECT ""Id"", ""Title"", ""Isbn"", ""PublishedYear"", ""Price"" from ""Books"" where ""Id"" = @BookId";
+
+            await using var bookCmd = new NpgsqlCommand(bookQuery, conn);
+            bookCmd.Parameters.AddWithValue("@BookId", bookId);
+            BookDto? book = null;
+
+            await using (var reader = await bookCmd.ExecuteReaderAsync())
+            {
+                if (!await reader.ReadAsync())
+                    return null;
+
+                book = new BookDto
+                {
+                    Id = reader.GetGuid(0),
+                    Title = reader.GetString(1),
+                    Isbn = reader.GetString(2),
+                    PublishedYear = reader.GetInt32(3),
+                    Price = reader.IsDBNull(4) ? null : reader.GetInt32(4),
+                    Authors = new List<AuthorDto>(),
+                    Categories = new List<Category>()
+                };
+            }
+
+            const string authorQuery = @"
+                select a.""Id"", a.""FirstName"", a.""LastName""
+                from ""Authors"" a
+                join ""BookAuthors"" ba on ba.""AuthorId"" = a.""Id""
+                where ba.""BookId"" = @BookId;";
+            await using var authorCmd = new NpgsqlCommand(authorQuery, conn);
+            authorCmd.Parameters.AddWithValue("@BookId", bookId);
+
+            await using (var authorReader = await authorCmd.ExecuteReaderAsync())
+            {
+                while (await authorReader.ReadAsync())
+                {
+                    book.Authors.Add(new AuthorDto
+                    {
+                        Id = authorReader.GetGuid(0),
+                        FirstName = authorReader.GetString(1),
+                        LastName = authorReader.GetString(2)
+                    });
+                }
+            }
+
+            const string categoryQuery = @"
+                select c.""Id"", c.""Name""
+                from ""Categories"" c
+                join ""BookCategories"" bc on bc.""CategoryId"" = c.""Id""
+                where bc.""BookId"" = @BookId";
+            await using var categoryCmd = new NpgsqlCommand(categoryQuery, conn);
+            categoryCmd.Parameters.AddWithValue("@BookId", bookId);
+            await using (var categoryReader = await categoryCmd.ExecuteReaderAsync())
+            {
+                while (await categoryReader.ReadAsync())
+                {
+                    book.Categories.Add(new Category
+                    {
+                        Id = categoryReader.GetGuid(0),
+                        Name = categoryReader.GetString(1)
+                    });
+                }
+            }
+
+            return book;
+        }
     }
 }

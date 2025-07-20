@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace Library.Controllers
 {
     [ApiController]
-    [Route("api/auth")]
+    [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly IUserService _userService;

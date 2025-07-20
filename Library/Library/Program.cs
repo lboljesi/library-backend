@@ -71,6 +71,8 @@ builder.Host.ConfigureContainer<ContainerBuilder>(container =>
     container.RegisterType<BookCategoryService>().As<IBookCategoryService>().InstancePerLifetimeScope();
     container.RegisterType<UserRepository>().As<IUserRepository>().InstancePerLifetimeScope();
     container.RegisterType<UserService>().As<IUserService>().InstancePerLifetimeScope();
+    container.RegisterType<AuthorRepository>().As<IAuthorRepository>().InstancePerLifetimeScope();
+    container.RegisterType<AuthorService>().As<IAuthorService>().InstancePerLifetimeScope();
 
 });
 

@@ -11,5 +11,8 @@ namespace LibraryService.Common
     public interface IBookService
     {
         Task<BooksPagedDto> GetBooksWithPaginationAsync(SortablePaginationQuery query);
+
+        Task<Guid> AddBookAsync(BooksCreateUpdate dto);
+        Task<BookDto?> GetBookByIdAsync(Guid bookId);
     }
 }
