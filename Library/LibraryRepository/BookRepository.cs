@@ -2,6 +2,7 @@
 using LibraryQuerying;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
+using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 
 
@@ -311,6 +312,29 @@ namespace LibraryRepository
             }
 
             return book;
+        }
+        public async Task<bool> DeleteBookAsync(Guid id)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            const string sql = @"delete from ""Books"" where ""Id"" = @Id";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("Id",id);
+            var affected = await cmd.ExecuteNonQueryAsync();
+            return affected > 0;
+        }
+
+        public async Task<bool> DeleteBookBulkAsync(List<Guid> ids)
+        {
+            if (ids == null || ids.Count == 0)
+                return false;
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            const string sql = @"delete from ""Books"" where ""Id"" = any(@Ids);";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("Ids", ids);
+            var affected = await cmd.ExecuteNonQueryAsync();
+            return affected > 0;
         }
     }
 }

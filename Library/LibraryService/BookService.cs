@@ -68,5 +68,16 @@ namespace LibraryService
         {
             return await _repository.GetBookByIdAsync(id);
         }
+
+        public async Task<bool> DeleteBookAsync(Guid id)
+        {
+            return await _repository.DeleteBookAsync(id);
+        }
+
+        public async Task<bool> DeleteBookBulkAsync(List<Guid> ids)
+        {
+
+            return await _repository.DeleteBookBulkAsync(ids);
+        }
     }
 }

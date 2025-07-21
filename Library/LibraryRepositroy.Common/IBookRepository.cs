@@ -10,5 +10,7 @@ namespace LibraryRepository
         Task<int> CountBooksAsync(SortablePaginationQuery query);
         Task<Guid> AddBookAsync(BooksCreateUpdate dto);
         Task<BookDto?> GetBookByIdAsync(Guid bookId);
+        Task<bool> DeleteBookAsync(Guid id);
+        Task<bool> DeleteBookBulkAsync(List<Guid> ids);
     }
 }

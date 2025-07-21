@@ -14,5 +14,8 @@ namespace LibraryService.Common
 
         Task<Guid> AddBookAsync(BooksCreateUpdate dto);
         Task<BookDto?> GetBookByIdAsync(Guid bookId);
+
+        Task<bool> DeleteBookAsync(Guid id);
+        Task<bool> DeleteBookBulkAsync(List<Guid> ids);
     }
 }

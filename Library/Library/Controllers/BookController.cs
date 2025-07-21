@@ -31,13 +31,33 @@ namespace Library.Controllers
         }
 
         [HttpGet("{id:guid}")]
-        public async Task<IActionResult> GetById(Guid id)
+        public async Task<ActionResult<BookDto>> GetById(Guid id)
         {
             var book = await _service.GetBookByIdAsync(id);
             if (book == null)
                 return NotFound();
 
             return Ok(book);
+        }
+
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            var success = await _service.DeleteBookAsync(id);
+            if (!success)
+                return NotFound();
+
+            return NoContent();
+        }
+
+        [HttpPost("delete/bulk")]
+        public async Task<IActionResult> BulkDelete([FromBody] List<Guid> ids)
+        {
+            var success = await _service.DeleteBookBulkAsync(ids);
+            if (!success)
+                return BadRequest("Failed to delete books.");
+
+            return NoContent();
         }
     }
 }
