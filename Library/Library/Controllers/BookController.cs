@@ -81,7 +81,7 @@ namespace Library.Controllers
         [HttpGet("{id:guid}/categories")]
         public async Task<IActionResult> GetAllCategoriesByBookId(Guid id)
         {
-            var result = await _service.GetCategoriesByBookIdAsync(id)
+            var result = await _service.GetCategoriesByBookIdAsync(id);
             return Ok(result);
         }
     }
