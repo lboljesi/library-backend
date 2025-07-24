@@ -25,7 +25,7 @@ namespace LibraryService
             _categoryRepository = categoryRepository;
         }
 
-        public async Task<BooksPagedDto> GetBooksWithPaginationAsync(SortablePaginationQuery query)
+        public async Task<BooksPagedDto> GetBooksWithPaginationAsync(BookQuery query)
         {
             var totalCount = await _repository.CountBooksAsync(query);
             var books = await _repository.GetAllBooksAsync(query);
@@ -78,6 +78,21 @@ namespace LibraryService
         {
 
             return await _repository.DeleteBookBulkAsync(ids);
+        }
+
+        public async Task<bool> UpdateBookAsync(Guid id, BookUpdateDto dto)
+        {
+            return await _repository.UpdateBookAsync(id, dto);
+        }
+
+        public async Task<List<AuthorDto>> GetAuthorsByBookIdAsync(Guid id)
+        {
+            return await _repository.GetAuthorsByBookIdAsync(id);
+        }
+
+        public async Task<List<Category>> GetCategoriesByBookIdAsync(Guid id)
+        {
+            return await _repository.GetCategoriesByBookIdAsync(id);
         }
     }
 }

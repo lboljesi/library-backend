@@ -16,7 +16,7 @@ namespace Library.Controllers
         }
 
         [HttpGet("paged")]
-        public async Task<IActionResult> GetPaged([FromQuery] SortablePaginationQuery query)
+        public async Task<IActionResult> GetPaged([FromQuery] BookQuery query)
         {
             var result = await _service.GetBooksWithPaginationAsync(query);
             return Ok(result);
@@ -58,6 +58,31 @@ namespace Library.Controllers
                 return BadRequest("Failed to delete books.");
 
             return NoContent();
+        }
+
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> UpdateBook(Guid id, [FromBody] BookUpdateDto dto)
+        {
+            var success = await _service.UpdateBookAsync(id, dto);
+            if (!success)
+                return NotFound();
+
+            var book = await _service.GetBookByIdAsync(id);
+            return Ok(book);
+        }
+
+        [HttpGet("{id:guid}/authors")]
+        public async Task<IActionResult> GetAllAuthorsByBookId(Guid id)
+        {
+            var result = await _service.GetAuthorsByBookIdAsync(id);
+            return Ok(result);
+        }
+
+        [HttpGet("{id:guid}/categories")]
+        public async Task<IActionResult> GetAllCategoriesByBookId(Guid id)
+        {
+            var result = await _service.GetCategoriesByBookIdAsync(id)
+            return Ok(result);
         }
     }
 }
