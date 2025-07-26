@@ -84,5 +84,40 @@ namespace Library.Controllers
             var result = await _service.GetCategoriesByBookIdAsync(id);
             return Ok(result);
         }
+        [HttpDelete("bookauthor/{id:guid}")]
+        public async Task<IActionResult> DeleteBookAuthor(Guid id)
+        {
+            var succes = await _service.DeleteBookAuthorAsync(id);
+            return succes ? NoContent() : NotFound();
+        }
+        [HttpDelete("bookcategory/{id:guid}")]
+        public async Task<IActionResult> DeleteBookCategory(Guid id)
+        {
+            var success = await _service.DeleteBookCategoryAsync(id);
+            return success ? NoContent() : NotFound();
+        }
+
+        [HttpPost("bookauthor/bulk")]
+        public async Task<IActionResult> AddBookAuthorsBulk([FromBody] AddBookAuthorsBulkDto dto)
+        {
+            if (dto.AuthorIds == null || dto.AuthorIds.Count == 0)
+                return BadRequest("No author IDs provided");
+
+            try
+            {
+                var (added, skipped) = await _service.AddBookAuthorsBulkAsync(dto);
+
+                return Ok(new
+                {
+                    Added = added,
+                    Skipped = skipped,
+                    Message = $"Added: {added.Count}, skipped: {skipped.Count}"
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { Errror = ex.Message });
+            }
+        }
     }
 }

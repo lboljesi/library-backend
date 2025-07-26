@@ -19,8 +19,11 @@ namespace LibraryService.Common
         Task<bool> DeleteBookBulkAsync(List<Guid> ids);
 
         Task<bool> UpdateBookAsync(Guid id, BookUpdateDto dto);
-        Task<List<AuthorDto>> GetAuthorsByBookIdAsync(Guid id);
+        Task<List<AuthorWithLinkDto>> GetAuthorsByBookIdAsync(Guid id);
 
-        Task<List<Category>> GetCategoriesByBookIdAsync(Guid id);
+        Task<List<CategoryWithLinkDto>> GetCategoriesByBookIdAsync(Guid id);
+        Task<bool> DeleteBookAuthorAsync(Guid bookAuthorId);
+        Task<bool> DeleteBookCategoryAsync(Guid id);
+        Task<(List<Guid> Added, List<Guid> Skipped)> AddBookAuthorsBulkAsync(AddBookAuthorsBulkDto dto);
     }
 }

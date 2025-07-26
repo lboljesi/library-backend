@@ -1,8 +1,11 @@
-﻿using LibraryModels;
+﻿using AutoMapper.Configuration.Conventions;
+using LibraryModels;
 using LibraryQuerying;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Configuration;
+using Microsoft.JSInterop.Infrastructure;
 using Npgsql;
-using System.Runtime.InteropServices.Marshalling;
+using System.Security.Cryptography;
 using System.Text;
 
 
@@ -44,11 +47,11 @@ namespace LibraryRepository
                 LEFT JOIN ""Categories"" c ON c.""Id"" = bc.""CategoryId""
                 WHERE 1=1    
             ");
-            if(query.PublishedYear.HasValue)
+            if (query.PublishedYear.HasValue)
             {
                 idQuery.AppendLine(@"AND b.""PublishedYear"" = @publishedYear");
             }
-            if(!string.IsNullOrWhiteSpace(query.Search))
+            if (!string.IsNullOrWhiteSpace(query.Search))
             {
                 idQuery.AppendLine(@"and (lower(b.""Title"") like @search or lower(b.""Isbn"") like @search)");
             }
@@ -65,11 +68,11 @@ namespace LibraryRepository
             idCmd.Parameters.AddWithValue("offset", offset);
             idCmd.Parameters.AddWithValue("limit", query.PageSize);
 
-            if(!string.IsNullOrWhiteSpace(query.Search))
+            if (!string.IsNullOrWhiteSpace(query.Search))
             {
                 idCmd.Parameters.AddWithValue("search", $"%{query.Search.ToLower()}%");
             }
-            if(query.PublishedYear.HasValue)
+            if (query.PublishedYear.HasValue)
             {
                 idCmd.Parameters.AddWithValue("publishedYear", query.PublishedYear);
             }
@@ -110,7 +113,7 @@ namespace LibraryRepository
 
             await using var reader = await cmd.ExecuteReaderAsync();
 
-            while(await reader.ReadAsync())
+            while (await reader.ReadAsync())
             {
                 MapRowToBook(reader, books);
             }
@@ -120,7 +123,7 @@ namespace LibraryRepository
         private void MapRowToBook(NpgsqlDataReader reader, Dictionary<Guid, BookDto> books)
         {
             var bookId = reader.GetGuid(0);
-            if(!books.TryGetValue(bookId, out var book))
+            if (!books.TryGetValue(bookId, out var book))
             {
                 book = new BookDto
                 {
@@ -132,12 +135,12 @@ namespace LibraryRepository
                     Authors = new List<AuthorDto>(),
                     Categories = new List<Category>()
                 };
-                books.Add(bookId,book);
+                books.Add(bookId, book);
             }
-            if(!reader.IsDBNull(5))
+            if (!reader.IsDBNull(5))
             {
                 var authorId = reader.GetGuid(5);
-                if(!book.Authors.Any(a => a.Id == authorId))
+                if (!book.Authors.Any(a => a.Id == authorId))
                 {
                     book.Authors.Add(new AuthorDto
                     {
@@ -150,9 +153,10 @@ namespace LibraryRepository
             if (!reader.IsDBNull(8))
             {
                 var categoryId = reader.GetGuid(8);
-                if(!book.Categories.Any(c => c.Id == categoryId))
+                if (!book.Categories.Any(c => c.Id == categoryId))
                 {
-                    book.Categories.Add(new Category { 
+                    book.Categories.Add(new Category
+                    {
                         Id = categoryId,
                         Name = reader.GetString(9)
                     });
@@ -181,14 +185,14 @@ namespace LibraryRepository
                 sql.AppendLine(@"and (lower(b.""Title"") like @search or lower(b.""Isbn"") like @search)");
                 cmd.Parameters.AddWithValue("search", $"%{query.Search?.ToLower()}%");
             }
-            if(query.PublishedYear.HasValue)
+            if (query.PublishedYear.HasValue)
             {
                 sql.AppendLine(@"and b.""PublishedYear"" = @publishedYear");
                 cmd.Parameters.AddWithValue("@publishedYear", query.PublishedYear);
             }
 
             cmd.CommandText = sql.ToString();
-            
+
             var result = await cmd.ExecuteScalarAsync();
             return Convert.ToInt32(result);
         }
@@ -227,11 +231,11 @@ namespace LibraryRepository
                 var authorQuery = @"
                     INSERT INTO ""BookAuthors"" (""BookId"", ""AuthorId"")
                     values (@BookId, @AuthorId);";
-                foreach(var authorId in dto.AuthorIds)
+                foreach (var authorId in dto.AuthorIds)
                 {
                     await using var authorCmd = new NpgsqlCommand(authorQuery, conn);
                     authorCmd.Parameters.AddWithValue("@BookId", bookId);
-                    authorCmd.Parameters.AddWithValue("@AuthorId",authorId);
+                    authorCmd.Parameters.AddWithValue("@AuthorId", authorId);
 
                     await authorCmd.ExecuteNonQueryAsync();
                 }
@@ -254,7 +258,7 @@ namespace LibraryRepository
             return bookId;
 
         }
-        
+
         public async Task<BookDto?> GetBookByIdAsync(Guid bookId)
         {
             await using var conn = new NpgsqlConnection(_connectionString);
@@ -332,7 +336,7 @@ namespace LibraryRepository
             await conn.OpenAsync();
             const string sql = @"delete from ""Books"" where ""Id"" = @Id";
             await using var cmd = new NpgsqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@Id",id);
+            cmd.Parameters.AddWithValue("@Id", id);
             var affected = await cmd.ExecuteNonQueryAsync();
             return affected > 0;
         }
@@ -349,8 +353,9 @@ namespace LibraryRepository
             var affected = await cmd.ExecuteNonQueryAsync();
             return affected > 0;
         }
-        
-        public async Task<bool> UpdateBookAsync(Guid id, BookUpdateDto dto) {
+
+        public async Task<bool> UpdateBookAsync(Guid id, BookUpdateDto dto)
+        {
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
 
@@ -366,14 +371,14 @@ namespace LibraryRepository
             var rows = await cmd.ExecuteNonQueryAsync();
             return rows > 0;
         }
-        public async Task<List<AuthorDto>> GetAuthorsByBookIdAsync(Guid id)
+        public async Task<List<AuthorWithLinkDto>> GetAuthorsByBookIdAsync(Guid id)
         {
-            var result = new List<AuthorDto>();
+            var result = new List<AuthorWithLinkDto>();
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
 
             const string sql = @"
-                select a.""Id"", a.""FirstName"", a.""LastName""
+                select a.""Id"", a.""FirstName"", a.""LastName"", ba.""Id""
                 from ""Authors"" a
                 join ""BookAuthors"" ba on a.""Id"" = ba.""AuthorId""
                 where ba.""BookId"" = @Id";
@@ -385,11 +390,12 @@ namespace LibraryRepository
 
             while (await reader.ReadAsync())
             {
-                result.Add(new AuthorDto
+                result.Add(new AuthorWithLinkDto
                 {
                     Id = reader.GetGuid(0),
                     FirstName = reader.GetString(1),
-                    LastName = reader.GetString(2)
+                    LastName = reader.GetString(2),
+                    BookAuthorId = reader.GetGuid(3)
                 });
 
             }
@@ -397,15 +403,15 @@ namespace LibraryRepository
 
         }
 
-        public async Task<List<Category>> GetCategoriesByBookIdAsync(Guid id)
+        public async Task<List<CategoryWithLinkDto>> GetCategoriesByBookIdAsync(Guid id)
         {
-            var result = new List<Category>();
+            var result = new List<CategoryWithLinkDto>();
 
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
 
             const string sql = @"
-                select c.""Id"", c.""Name""
+                select c.""Id"", c.""Name"", bc.""Id""
                 from ""Categories"" c
                 join ""BookCategories"" bc on bc.""CategoryId"" = c.""Id""
                 where bc.""BookId"" = @Id;
@@ -417,12 +423,108 @@ namespace LibraryRepository
 
             while (await reader.ReadAsync())
             {
-                result.Add(new Category { 
+                result.Add(new CategoryWithLinkDto
+                {
                     Id = reader.GetGuid(0),
-                    Name=reader.GetString(1)
+                    Name = reader.GetString(1),
+                    BookCategoryId = reader.GetGuid(2)
                 });
             }
             return result;
+        }
+
+        public async Task<bool> DeleteBookAuthorAsync(Guid bookAuthorId)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            const string sql = @"delete from ""BookAuthors"" where ""Id""=@Id";
+
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Id", bookAuthorId);
+
+            var affected = await cmd.ExecuteNonQueryAsync();
+            return affected > 0;
+        }
+
+        public async Task<bool> DeleteBookCategoryAsync(Guid id)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            const string sql = @"delete from ""BookCategories"" where ""Id"" = @Id";
+
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Id", id);
+
+            var affected = await cmd.ExecuteNonQueryAsync();
+            return affected > 0;
+        }
+
+        public async Task<(List<Guid> Added, List<Guid> Skipped)> AddBookAuthorsBulkAsync(AddBookAuthorsBulkDto dto)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var validIds = await GetValidAuthorIdsAsync(conn, dto.AuthorIds);
+            if (validIds.Count == 0)
+                return (new(), dto.AuthorIds);
+            var alreadyLinked = await GetAlreadyLinkedAuthorIdsAsync(conn, dto.BookId);
+            var toInsert = validIds.Where(id => !alreadyLinked.Contains(id)).ToList();
+            if (toInsert.Count == 0)
+                return (new(), dto.AuthorIds);
+
+            await InsertBookAuthorsAsync(conn, dto.BookId,toInsert);
+
+            var skipped = dto.AuthorIds.Except(toInsert).ToList();
+            return (toInsert, skipped);
+        }
+        private async Task<List<Guid>> GetValidAuthorIdsAsync(NpgsqlConnection conn, List<Guid> authorIds)
+        {
+            const string sql = @"select ""Id"" from ""Authors"" where ""Id""=ANY(@Ids)";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Ids",authorIds.ToArray());
+            var result = new List<Guid>();
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                result.Add(reader.GetGuid(0));
+            return result;
+        }
+
+        private async Task<HashSet<Guid>> GetAlreadyLinkedAuthorIdsAsync(NpgsqlConnection conn, Guid bookId)
+        {
+            const string sql = @"select ""AuthorId"" from ""BookAuthors"" where ""BookId"" = @BookId";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@BookId", bookId);
+
+            var result = new HashSet<Guid>();
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                result.Add(reader.GetGuid(0));
+            }
+            return result;
+        }
+        private async Task InsertBookAuthorsAsync(NpgsqlConnection conn, Guid bookId, List<Guid> authorIds)
+        {
+            var sb = new StringBuilder(@"
+                insert into ""BookAuthors"" (""BookId"", ""AuthorId"") values 
+            ");
+            await using var cmd = new NpgsqlCommand {Connection = conn };
+
+
+
+            for (int i = 0; i < authorIds.Count; i++)
+            {
+                var param = $"@id{i}";
+                sb.Append($"(@bookId, {param})");
+                if (i < authorIds.Count - 1) sb.Append(", ");
+                cmd.Parameters.AddWithValue(param, authorIds[i]);
+            }
+            cmd.Parameters.AddWithValue("@bookId", bookId);
+            cmd.CommandText = sb.ToString();
+
+            await cmd.ExecuteNonQueryAsync();
         }
     }
 }

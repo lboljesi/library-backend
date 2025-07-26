@@ -85,14 +85,28 @@ namespace LibraryService
             return await _repository.UpdateBookAsync(id, dto);
         }
 
-        public async Task<List<AuthorDto>> GetAuthorsByBookIdAsync(Guid id)
+        public async Task<List<AuthorWithLinkDto>> GetAuthorsByBookIdAsync(Guid id)
         {
             return await _repository.GetAuthorsByBookIdAsync(id);
         }
 
-        public async Task<List<Category>> GetCategoriesByBookIdAsync(Guid id)
+        public async Task<List<CategoryWithLinkDto>> GetCategoriesByBookIdAsync(Guid id)
         {
             return await _repository.GetCategoriesByBookIdAsync(id);
+        }
+        public async Task<bool> DeleteBookAuthorAsync(Guid bookAuthorId)
+        {
+            return await _repository.DeleteBookAuthorAsync(bookAuthorId);
+        }
+        public async Task<bool> DeleteBookCategoryAsync(Guid id)
+        {
+            return await _repository.DeleteBookCategoryAsync(id);
+        }
+        public async Task<(List<Guid> Added, List<Guid> Skipped)> AddBookAuthorsBulkAsync(AddBookAuthorsBulkDto dto)
+        {
+            if (!await _repository.ExistsAsync(dto.BookId))
+                throw new ArgumentException($"Book with ID {dto.BookId} does not exist!");
+            return await _repository.AddBookAuthorsBulkAsync(dto);
         }
     }
 }
