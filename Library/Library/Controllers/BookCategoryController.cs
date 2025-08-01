@@ -68,7 +68,7 @@ namespace Library.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<List<CategoryWithRelation>>> CreateManyAsync([FromBody] AddCategoriesToBookDto dto)
+        public async Task<ActionResult<List<CategoryWithLinkDto>>> CreateManyAsync([FromBody] AddCategoriesToBookDto dto)
         {
             if (dto.CategoryIds == null || !dto.CategoryIds.Any())
                 return BadRequest("At least one category must be selected.");

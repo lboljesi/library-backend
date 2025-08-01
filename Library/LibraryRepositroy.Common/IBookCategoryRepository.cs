@@ -15,7 +15,7 @@ namespace LibraryRepository.Common
         Task<BookCategory?> GetByIdAsync(Guid id);
         Task<List<BookCategoryJOIN>> GetAllAsync(SortablePaginationQuery query);
         Task<bool> ExistsAsync(Guid bookId, Guid categoryId);
-        Task<List<CategoryWithRelation>> CreateManyAsync(Guid bookId, List<Guid> categoryIds);
+        Task<List<CategoryWithLinkDto>> CreateManyAsync(Guid bookId, List<Guid> categoryIds);
         Task<List<Books>> GetBooksForCategoryAsync(Guid categoryId);
         Task<PagedResult<BookWithCategoriesDto>> GetGroupedByBookAsync(PaginationQuery query);
         Task<List<Category>> GetCategoriesWithoutBooksAsync();

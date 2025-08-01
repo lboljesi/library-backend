@@ -66,7 +66,7 @@ namespace LibraryService
             return await _repository.GetBooksForCategoryAsync(categoryId);
         }
 
-        public async Task<List<CategoryWithRelation>> CreateManyAsync(Guid bookId, List<Guid> categoryIds)
+        public async Task<List<CategoryWithLinkDto>> CreateManyAsync(Guid bookId, List<Guid> categoryIds)
         {
             if (categoryIds == null || !categoryIds.Any())
                 throw new ArgumentException("At least one category must be provided.");

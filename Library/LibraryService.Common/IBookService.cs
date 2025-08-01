@@ -24,6 +24,6 @@ namespace LibraryService.Common
         Task<List<CategoryWithLinkDto>> GetCategoriesByBookIdAsync(Guid id);
         Task<bool> DeleteBookAuthorAsync(Guid bookAuthorId);
         Task<bool> DeleteBookCategoryAsync(Guid id);
-        Task<(List<Guid> Added, List<Guid> Skipped)> AddBookAuthorsBulkAsync(AddBookAuthorsBulkDto dto);
+        Task<List<AuthorWithLinkDto>> AddAuthorsToBookAsync(Guid bookId, List<Guid> authorIds);
     }
 }

@@ -461,70 +461,66 @@ namespace LibraryRepository
             return affected > 0;
         }
 
-        public async Task<(List<Guid> Added, List<Guid> Skipped)> AddBookAuthorsBulkAsync(AddBookAuthorsBulkDto dto)
+        public async Task<bool> ExistsRelationAsync(Guid bookId, Guid authorId)
         {
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
 
-            var validIds = await GetValidAuthorIdsAsync(conn, dto.AuthorIds);
-            if (validIds.Count == 0)
-                return (new(), dto.AuthorIds);
-            var alreadyLinked = await GetAlreadyLinkedAuthorIdsAsync(conn, dto.BookId);
-            var toInsert = validIds.Where(id => !alreadyLinked.Contains(id)).ToList();
-            if (toInsert.Count == 0)
-                return (new(), dto.AuthorIds);
+            const string sql = @"select 1 from ""BookAuthors"" where ""BookId"" = @bookId and ""AuthorId"" = @authorId limit 1" ;
 
-            await InsertBookAuthorsAsync(conn, dto.BookId,toInsert);
-
-            var skipped = dto.AuthorIds.Except(toInsert).ToList();
-            return (toInsert, skipped);
-        }
-        private async Task<List<Guid>> GetValidAuthorIdsAsync(NpgsqlConnection conn, List<Guid> authorIds)
-        {
-            const string sql = @"select ""Id"" from ""Authors"" where ""Id""=ANY(@Ids)";
             await using var cmd = new NpgsqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@Ids",authorIds.ToArray());
-            var result = new List<Guid>();
-            await using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-                result.Add(reader.GetGuid(0));
-            return result;
-        }
-
-        private async Task<HashSet<Guid>> GetAlreadyLinkedAuthorIdsAsync(NpgsqlConnection conn, Guid bookId)
-        {
-            const string sql = @"select ""AuthorId"" from ""BookAuthors"" where ""BookId"" = @BookId";
-            await using var cmd = new NpgsqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@BookId", bookId);
-
-            var result = new HashSet<Guid>();
-            await using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                result.Add(reader.GetGuid(0));
-            }
-            return result;
-        }
-        private async Task InsertBookAuthorsAsync(NpgsqlConnection conn, Guid bookId, List<Guid> authorIds)
-        {
-            var sb = new StringBuilder(@"
-                insert into ""BookAuthors"" (""BookId"", ""AuthorId"") values 
-            ");
-            await using var cmd = new NpgsqlCommand {Connection = conn };
-
-
-
-            for (int i = 0; i < authorIds.Count; i++)
-            {
-                var param = $"@id{i}";
-                sb.Append($"(@bookId, {param})");
-                if (i < authorIds.Count - 1) sb.Append(", ");
-                cmd.Parameters.AddWithValue(param, authorIds[i]);
-            }
             cmd.Parameters.AddWithValue("@bookId", bookId);
-            cmd.CommandText = sb.ToString();
+            cmd.Parameters.AddWithValue("@authorId", authorId);
+            var result = await cmd.ExecuteScalarAsync();
+            return result is not null;
+        }
 
-            await cmd.ExecuteNonQueryAsync();
+        public async Task<List<AuthorWithLinkDto>> AddAuthorsToBookAsync(Guid bookId, List<Guid> authorIds)
+        {
+            var result = new List<AuthorWithLinkDto>();
+
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            foreach (var authorId in authorIds)
+            {
+                if (await ExistsRelationAsync(bookId, authorId)) continue;
+                Guid id = Guid.NewGuid();
+
+                const string sql = @"
+                    with inserted as (
+                        insert into ""BookAuthors"" (""Id"", ""BookId"", ""AuthorId"")
+                        values (@id, @bookId, @authorId)
+                        returning ""Id"", ""AuthorId""
+                    )
+                    select
+                        inserted.""Id"" as BookAuthorRelationId,
+                        a.""Id"" as AuthorId,
+                        a.""FirstName"" as AuthorFirstName,
+                        a.""LastName"" as AuthorLastName
+                    from inserted
+                    join ""Authors"" a on a.""Id"" = inserted.""AuthorId"";
+                ";
+
+                await using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.Parameters.AddWithValue("@bookId", bookId);
+                cmd.Parameters.AddWithValue("@authorId", authorId);
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+                if(await reader.ReadAsync())
+                {
+                    result.Add(new AuthorWithLinkDto
+                    {
+                        BookAuthorId = reader.GetGuid(0),
+                        Id = reader.GetGuid(1),
+                        FirstName = reader.GetString(2),
+                        LastName = reader.GetString(3)
+                    });
+                }
+                await reader.CloseAsync();
+            }
+            return result;
         }
     }
 }

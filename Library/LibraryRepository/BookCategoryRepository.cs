@@ -146,9 +146,9 @@ namespace LibraryRepository
             var result = await cmd.ExecuteScalarAsync();
             return result is not null;
         }
-        public async Task<List<CategoryWithRelation>> CreateManyAsync(Guid bookId, List<Guid> categoryIds)
+        public async Task<List<CategoryWithLinkDto>> CreateManyAsync(Guid bookId, List<Guid> categoryIds)
         {
-            var result = new List<CategoryWithRelation>();
+            var result = new List<CategoryWithLinkDto>();
 
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
@@ -180,11 +180,11 @@ namespace LibraryRepository
                 await using var reader = await cmd.ExecuteReaderAsync();
                 if (await reader.ReadAsync())
                 {
-                    result.Add(new CategoryWithRelation
+                    result.Add(new CategoryWithLinkDto
                     {
-                        BookCategoryRelationId = reader.GetGuid(0),
-                        CategoryId = reader.GetGuid(1),
-                        CategoryName = reader.GetString(2)
+                        BookCategoryId = reader.GetGuid(0),
+                        Id = reader.GetGuid(1),
+                        Name = reader.GetString(2)
                     });
                 }
 

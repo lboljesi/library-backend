@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LibraryModels
 {
-    public class AddBookAuthorsBulkDto
+    public class AddAuthorsToBookDto
     {
         public Guid BookId { get; set; }
         public List<Guid> AuthorIds { get; set; } = new List<Guid>();

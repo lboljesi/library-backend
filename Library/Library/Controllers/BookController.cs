@@ -98,26 +98,37 @@ namespace Library.Controllers
         }
 
         [HttpPost("bookauthor/bulk")]
-        public async Task<IActionResult> AddBookAuthorsBulk([FromBody] AddBookAuthorsBulkDto dto)
+
+        public async Task<ActionResult<List<AuthorWithLinkDto>>> AddBookAuthorsBulk([FromBody] AddAuthorsToBookDto dto)
         {
-            if (dto.AuthorIds == null || dto.AuthorIds.Count == 0)
-                return BadRequest("No author IDs provided");
-
-            try
+            if(dto.AuthorIds == null || !dto.AuthorIds.Any())
             {
-                var (added, skipped) = await _service.AddBookAuthorsBulkAsync(dto);
-
-                return Ok(new
-                {
-                    Added = added,
-                    Skipped = skipped,
-                    Message = $"Added: {added.Count}, skipped: {skipped.Count}"
-                });
+                return BadRequest("At least one author must be selected");
             }
-            catch (ArgumentException ex)
+
+            try {
+                var result = await _service.AddAuthorsToBookAsync(dto.BookId, dto.AuthorIds);
+                return Ok(result);
+            }
+            catch(ArgumentException ex)
             {
-                return NotFound(new { Errror = ex.Message });
+                return BadRequest(ex.Message);
+            }
+            catch(InvalidOperationException ex)
+            {
+                if (ex.Message.Contains("Book does not exist"))
+                    return NotFound(ex.Message);
+
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex) {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occured while processing your request: {ex.Message}");
             }
         }
+
+
+            
+
+        
     }
 }

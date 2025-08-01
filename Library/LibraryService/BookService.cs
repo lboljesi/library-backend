@@ -102,11 +102,35 @@ namespace LibraryService
         {
             return await _repository.DeleteBookCategoryAsync(id);
         }
-        public async Task<(List<Guid> Added, List<Guid> Skipped)> AddBookAuthorsBulkAsync(AddBookAuthorsBulkDto dto)
+        public async Task<List<AuthorWithLinkDto>> AddAuthorsToBookAsync(Guid bookId, List<Guid> authorIds)
         {
-            if (!await _repository.ExistsAsync(dto.BookId))
-                throw new ArgumentException($"Book with ID {dto.BookId} does not exist!");
-            return await _repository.AddBookAuthorsBulkAsync(dto);
+            if (authorIds == null || !authorIds.Any())
+                throw new ArgumentException("At least one author must be provided!");
+
+            if (!await _repository.ExistsAsync(bookId))
+                throw new InvalidOperationException("Book does not exist");
+
+            var validAuthorIds = await _authorRepository.GetExistingAuthorIdsAsync(authorIds);
+
+            var filtered = new List<Guid>();
+            foreach (var authorId in validAuthorIds)
+            {
+                if(!await _repository.ExistsRelationAsync(bookId, authorId))
+                {
+                    filtered.Add(authorId);
+                }
+            }
+
+            if(!filtered.Any())
+            {
+                throw new InvalidOperationException("All realtions already exist or are invalid");
+            }
+
+            var result = await _repository.AddAuthorsToBookAsync(bookId, authorIds);
+            if (!result.Any())
+                throw new InvalidOperationException("No relations were created");
+
+            return result;
         }
     }
 }
