@@ -73,6 +73,8 @@ builder.Host.ConfigureContainer<ContainerBuilder>(container =>
     container.RegisterType<UserService>().As<IUserService>().InstancePerLifetimeScope();
     container.RegisterType<AuthorRepository>().As<IAuthorRepository>().InstancePerLifetimeScope();
     container.RegisterType<AuthorService>().As<IAuthorService>().InstancePerLifetimeScope();
+    container.RegisterType<MemberRepository>().As<IMemberRepository>().InstancePerLifetimeScope();
+    container.RegisterType<MemberService>().As<IMemberService>().InstancePerLifetimeScope();
 
 });
 
