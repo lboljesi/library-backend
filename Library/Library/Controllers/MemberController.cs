@@ -30,10 +30,11 @@ namespace Library.Controllers
             return Ok(member);
         }
         [HttpPost]
-        public async Task<IActionResult> Create(MemberCreateUpdateDto dto)
+        public async Task<IActionResult> Create([FromBody] MemberCreateUpdateDto dto)
         {
-            var id = await _memberService.AddAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id }, null);
+            var memberId = await _memberService.AddAsync(dto);
+            var createdMember = await _memberService.GetByIdAsync(memberId);
+            return CreatedAtAction(nameof(GetById), new { id = memberId }, createdMember);
         }
 
         [HttpPut("{id}")]
