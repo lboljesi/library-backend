@@ -17,5 +17,7 @@ namespace LibraryService.Common
         Task<bool> DeleteAsync(Guid id);
 
         Task<PagedResultMember<MemberDto>> GetPagedAsync(SortablePaginationQuery q);
+
+        Task<List<LoanDto>> GetLoansByMemberIdAsync(Guid memberId);
     }
 }

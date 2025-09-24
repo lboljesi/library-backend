@@ -47,5 +47,10 @@ namespace LibraryService
             return _memberRepository.GetPagedAsync(q);
         }
 
+        public Task<List<LoanDto>> GetLoansByMemberIdAsync(Guid memberId)
+        {
+            return _memberRepository.GetLoansByMemberIdAsync(memberId);
+        }
+
     }
 }

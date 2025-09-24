@@ -194,19 +194,19 @@ namespace LibraryRepository
 
             return new PagedResultMember<MemberDto>(items, totalCount);
         }
-
-        public async Task<List<LoanDto>> GetLoanByMemberIdAsync(Guid memberId)
+        
+        public async Task<List<LoanDto>> GetLoansByMemberIdAsync(Guid memberId)
         {
             var loans = new List<LoanDto>();
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
 
             const string sql = @"
-                SELECT l.""Id"", l.""BookId"", l.""MemberId"", l.""LoanDate"", l.""ReturnedDate"", l.""MustReturn, b.""Title"", b.""Isbn""
-                FROM ""Loans"" l
-                JOIN ""Books"" b ON b.""Id"" = l.""BookId""
-                WHERE l.""MemberId"" = @memberId
-                ORDER BY l.""LoanDate"" DESC;";
+                select l.""Id"", l.""BookId"", l.""MemberId"", l.""LoanDate"", l.""ReturnedDate"", l.""MustReturn"", b.""Title"", b.""Isbn""
+                from ""Loans"" l
+                join ""Books"" b on b.""Id"" = l.""BookId""
+                where l.""MemberId"" = @memberId
+                order by l.""LoanDate"" desc";
 
             await using var cmd = new NpgsqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@memberId", memberId);
@@ -226,9 +226,9 @@ namespace LibraryRepository
                     Isbn = reader.GetString(7)
                 });
             }
+
             return loans;
         }
-
 
     }
 }

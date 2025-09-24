@@ -62,5 +62,15 @@ namespace Library.Controllers
             var result = await _memberService.GetPagedAsync(q);
             return Ok(result);
         }
+
+        [HttpGet("{id}/loans")]
+        public async Task<IActionResult> GetLoans(Guid id)
+        {
+            var member = await _memberService.GetByIdAsync(id);
+            if (member == null) return NotFound();
+
+            var loans = await _memberService.GetLoansByMemberIdAsync(id);
+            return Ok(loans);
+        }
     }
 }
