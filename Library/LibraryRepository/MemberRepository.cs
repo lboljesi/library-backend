@@ -1,9 +1,12 @@
 ﻿using LibraryModels;
+using LibraryQuerying;
 using LibraryRepository.Common;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
+using NpgsqlTypes;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -31,7 +34,7 @@ namespace LibraryRepository
             await using var cmd = new NpgsqlCommand(sql, conn);
             await using var reader = await cmd.ExecuteReaderAsync();
 
-            while(await reader.ReadAsync())
+            while (await reader.ReadAsync())
             {
                 members.Add(new MemberDto
                 {
@@ -57,7 +60,8 @@ namespace LibraryRepository
             await using var reader = await cmd.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
-                return new MemberDto{
+                return new MemberDto
+                {
                     Id = reader.GetGuid(0),
                     Name = reader.GetString(1),
                     MembershipDate = reader.GetDateTime(2),
@@ -81,7 +85,7 @@ namespace LibraryRepository
             await using var cmd = new NpgsqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@Id", id);
             cmd.Parameters.AddWithValue("@Name", dto.Name);
-            cmd.Parameters.AddWithValue("@MembershipDate", dto.MembershipDate);            
+            cmd.Parameters.AddWithValue("@MembershipDate", dto.MembershipDate);
             cmd.Parameters.AddWithValue("@BirthYear", dto.BirthYear);
 
             await cmd.ExecuteNonQueryAsync();
@@ -119,5 +123,112 @@ namespace LibraryRepository
             var rows = await cmd.ExecuteNonQueryAsync();
             return rows > 0;
         }
+
+        public async Task<PagedResultMember<MemberDto>> GetPagedAsync(SortablePaginationQuery q)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var page = q.Page < 1 ? 1 : q.Page;
+            var pageSize = q.PageSize < 1 ? 10 : q.PageSize;
+            
+            var sortKey = (q.SortBy ?? "name").ToLowerInvariant();
+
+            string sortColumn = sortKey switch
+            {
+                "birthyear" => "\"BirthYear\"",
+                "membershipdate" => "\"MembershipDate\"",
+                _ => "\"Name\""
+            };
+            string orderDir = q.Desc ? "DESC" : "ASC";
+
+            var where = new StringBuilder("WHERE 1 = 1");
+
+            bool hasSearch = !string.IsNullOrWhiteSpace(q.Search);
+            if(hasSearch)
+            {
+                where.Append(@" and ""Name"" ILIKE @search");
+            }
+            var items = new List<MemberDto>();
+
+            var sql = $@"
+                SELECT ""Id"", ""Name"", ""MembershipDate"", ""BirthYear""
+                FROM ""Members""
+                {where}
+                ORDER BY {sortColumn} {orderDir}
+                LIMIT @limit OFFSET @offset;";
+
+
+
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            if(hasSearch)
+            {
+                cmd.Parameters.AddWithValue("@search", NpgsqlDbType.Text).Value = $"%{q.Search}%";
+            }
+            cmd.Parameters.AddWithValue("@limit", pageSize);
+            cmd.Parameters.AddWithValue("@offset", (page - 1) * pageSize);
+
+            await using (var reader = await cmd.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    items.Add(new MemberDto
+                    {
+                        Id = reader.GetGuid(0),
+                        Name = reader.GetString(1),
+                        MembershipDate = reader.GetDateTime(2),
+
+                        BirthYear = reader.GetInt32(3)
+                    });
+                }
+            }
+
+
+            var countSql = $@"SELECT COUNT(*) FROM ""Members"" {where};";
+            int totalCount;
+            await using var countCmd = new NpgsqlCommand(countSql, conn);
+            if (hasSearch)
+                countCmd.Parameters.Add("@search", NpgsqlDbType.Text).Value = $"%{q.Search}%";
+            var obj = await countCmd.ExecuteScalarAsync();
+            totalCount = Convert.ToInt32(obj);
+
+            return new PagedResultMember<MemberDto>(items, totalCount);
+        }
+
+        public async Task<List<LoanDto>> GetLoanByMemberIdAsync(Guid memberId)
+        {
+            var loans = new List<LoanDto>();
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            const string sql = @"
+                SELECT l.""Id"", l.""BookId"", l.""MemberId"", l.""LoanDate"", l.""ReturnedDate"", l.""MustReturn, b.""Title"", b.""Isbn""
+                FROM ""Loans"" l
+                JOIN ""Books"" b ON b.""Id"" = l.""BookId""
+                WHERE l.""MemberId"" = @memberId
+                ORDER BY l.""LoanDate"" DESC;";
+
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@memberId", memberId);
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while(await reader.ReadAsync())
+            {
+                loans.Add(new LoanDto
+                {
+                    Id = reader.GetGuid(0),
+                    BookId = reader.GetGuid(1),
+                    MemberId = reader.GetGuid(2),
+                    LoanDate = reader.GetDateTime(3),
+                    ReturnedDate = reader.IsDBNull(4) ? (DateTime?)null : reader.GetDateTime(4),
+                    MustReturn = reader.GetDateTime(5),
+                    BookTitle = reader.GetString(6),
+                    Isbn = reader.GetString(7)
+                });
+            }
+            return loans;
+        }
+
+
     }
 }

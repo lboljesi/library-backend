@@ -1,4 +1,5 @@
 ﻿using LibraryModels;
+using LibraryQuerying;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,5 +15,7 @@ namespace LibraryService.Common
         Task<Guid> AddAsync(MemberCreateUpdateDto dto);
         Task<bool> UpdateAsync(Guid id, MemberCreateUpdateDto dto);
         Task<bool> DeleteAsync(Guid id);
+
+        Task<PagedResultMember<MemberDto>> GetPagedAsync(SortablePaginationQuery q);
     }
 }

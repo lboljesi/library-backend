@@ -1,4 +1,5 @@
 ﻿using LibraryModels;
+using LibraryQuerying;
 using LibraryService.Common;
 using Microsoft.AspNetCore.Mvc;
 
@@ -53,6 +54,13 @@ namespace Library.Controllers
             if (!deleted)
                 return NotFound();
             return NoContent();
+        }
+
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetPaged([FromQuery] SortablePaginationQuery q)
+        {
+            var result = await _memberService.GetPagedAsync(q);
+            return Ok(result);
         }
     }
 }

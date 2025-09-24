@@ -1,4 +1,5 @@
 ﻿using LibraryModels;
+using LibraryQuerying;
 using LibraryRepository.Common;
 using LibraryService.Common;
 using System;
@@ -39,6 +40,11 @@ namespace LibraryService
         public Task<bool> DeleteAsync(Guid id)
         {
             return _memberRepository.DeleteAsync(id);
+        }
+
+        public Task<PagedResultMember<MemberDto>> GetPagedAsync(SortablePaginationQuery q)
+        {
+            return _memberRepository.GetPagedAsync(q);
         }
 
     }
